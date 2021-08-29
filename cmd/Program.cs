@@ -49,12 +49,12 @@ namespace fql
                     else if (line == "update")
                     {
                         var updateResult = 
-                            SearchInfo.UpdateAsync
+                            await SearchInfo.UpdateAsync
                             (
                                 new List<string> { dirPath }, 
                                 new List<string>(), 
                                 OnDirectoryUpdate
-                            ).Result;
+                            );
                         Console.WriteLine("DB updated: files added: {0} - removed: {1} - modified: {2} - indexed: {3}", 
                                           updateResult.filesAdded, 
                                           updateResult.filesRemoved, 

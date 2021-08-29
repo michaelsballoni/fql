@@ -2,7 +2,7 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>My Media Search - Find media files on your Windows PC</title>
+    <title>My Media Search - Find and enjoy your media files on your Windows PC</title>
     <link rel="icon" type="image/png" href="favicon.png">
     
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
@@ -76,40 +76,30 @@
                 </ul>
                 <br>
             </li>
-
-            <li>
-                <b>Programmers</b>
-                <ol>
-                    <li><a href="#fql">aka, FQL...2!</a></li>
-                    <li><a href="#metastrings">metastrings</a></li>
-                    <li><a href="#getmetadata">getting file metadata</a></li>
-                    <li><a href="#metastrings2">metastrings, part deux</a></li>
-                </ol>
-            </li>
         </ul>
     </div>
 
     <div id=contentDiv>
-        <h2><a name=home>My Media Search - Find media files on your Windows PC</a></h2>
+        <h2><a name=home>My Media Search - Find and enjoy media files on your PC</a></h2>
 
-        Get search results for pictures, music, and videos in seconds
+        Get search results for pictures, music, and videos in mere seconds
 
         <ul style="margin-bottom: 0px">
             <li>Search using keywords like "vacation videos -Michael" for all vacation videos that don't feature Michael<br><br></li>
             <li>Tracks changes to folders that you've told it to look in while it is running<br><br></li>
-            <li>You can Open, Show in Folder, and Get Properties of search results<br><br></li>
-            <li>The search results view can be switched between details and tiles<br><br></li>
+            <li>Open, Show in Folder, and Get Properties of search results<br><br></li>
+            <li>Switch search results between details and tiles<br><br></li>
         </ul>
 
         Download installer for Windows 10:
-        <a href="MyMediaSearch.1.1.3.msi">MyMediaSearch.1.1.3.msi</a>
+        <a href="MyMediaSearch.1.2.0.msi">MyMediaSearch.1.2.0.msi</a>
         <br>
 
         <p>This is a fun program, and I hope you enjoy using it</p>
 
         <p>
-            It has also been a fun piece of software to develop;
-            here's <a href="#programming">info that programmers may enjoy</a>
+            It has also been a fun piece of software to develop.
+            Check out Code Project for an article describing the programming of this app.
         </p>
         
         <p>
@@ -149,190 +139,6 @@
         <br>
         <br>
         <img src=search.png width=800>
-
-        <h1><a name=programming>Programmers</a></h1>
-        <a name=fql />
-        My Media Search is called FQL internally, File Query Language.
-        Check out the
-        <a href="https://github.com/michaelsballoni/fql2">fql2 Open Source Project</a> on GitHub
-        <br>
-        <br>
-        <a name=metastrings />
-        <b>My Media Search</b> is powered by the
-        <a href="https://www.metastrings.io/v1">metastrings</a> database library,
-        which is also Open Source.
-        <br>
-        <br>
-        The metastrings database library is tasked with tracking the search data
-        of the indexed files.
-        This application configures metastrings to use SQLite as the database provided.
-        I had originally coded directly against SQLite, and it was fine,
-        but programming the full-text index and queries was non-trivial,
-        and I imagine it would be too much for a programmer only versed in SQL like SELECT and INSERT statements.
-        With metastrings, every column is automatically indexed, included full-text index,
-        and the query is as simple as
-        <pre class="prettyprint lang-sql">SELECT value\nFROM files\nWHERE MATCHES @searchTerms</pre>
-
-        <h3><a name=getmetadata>Getting File Metadata From Windows</a></h3>
-        In the last iteration of this project I was gathering and indexing all media file metadata,
-        but, frankly, the API is very slow,
-        so I went with getting search terms from the path to the file.
-        It's been good enough for my searching needs, and it's really fast.
-        I kept the metadata-fetching code, which is now used when you get info about a file.
-        It's amazing how much metadata Windows tracks about each media file!
-        Enjoy the code.
-        <br>
-<pre class="prettyprint lang-cs">
-public static Dictionary<string, string> GetFileMetadata(string filePath)
-{
-    Dictionary<string, string> metadata = new Dictionary<string, string>();
-
-    Shell32.Shell shell = new Shell32.Shell();
-    Shell32.Folder objFolder = shell.NameSpace(Path.GetDirectoryName(filePath));
-
-    List<string> headers = new List<string>();
-    for (int i = 0; i < short.MaxValue; ++i)
-    {
-        string header = objFolder.GetDetailsOf(null, i);
-        if (string.IsNullOrEmpty(header))
-            break;
-
-        headers.Add(header);
-    }
-    if (headers.Count == 0)
-        return metadata;
-
-    foreach (Shell32.FolderItem2 item in objFolder.Items())
-    {
-        if (!filePath.Equals(item.Path, StringComparison.OrdinalIgnoreCase))
-            continue;
-
-        for (int i = 0; i < headers.Count; ++i)
-        {
-            string details = objFolder.GetDetailsOf(item, i);
-            if (!string.IsNullOrWhiteSpace(details))
-                metadata.Add(headers[i], details);
-        }
-    }
-
-    return metadata;
-} // GetFileMetadata()
-</pre>
-
-        <h3><a name=metastrings2>metastrings, part deux</a></h3>
-        Here are snippets of code to see what metastrings coding looks like.
-        You'll see that in some cases you use a simple SQL dialect,
-        while in other cases you go with a programmatic approach.
-        <br>
-        <br>
-        Here is the code for searching the database.
-        Note that you have to use parameters for WHERE criteria, no literals,
-        and you can have multipe WHERE criteria, but only AND between them, no OR or parentheses.
-<pre class="prettyprint lang-cs">
-public static async Task<List<string>> SearchAsync(string query, int maxResults)
-{
-    var select =
-        sqlparser.ParseQuery
-        (
-            "SELECT value\n" +
-            "FROM files\n" +
-            "WHERE searchdata MATCHES @search"
-        );
-    select.limit = maxResults;
-    select.AddParam("@search", query);
-
-    var results = new List&lt;string&gt;();
-    using (var cmd = msctxt.getcmd())
-    using (var reader = await cmd.GetReaderAsync(select))
-    {
-        while (await reader.ReadAsync())
-            results.Add(reader.GetString(0));
-    }
-    return results;
-}
-</pre>
-
-        Here you can see issuing a query to get all values (primary keys, in our case, file paths)
-        from the main files table.  This is blazing fast as it maps directly to a simple SQLite query:
-<pre class="prettyprint lang-cs">
-var select = sqlparser.ParseQuery("SELECT value FROM files");
-using (var cmd = msctxt.getcmd())
-using (var reader = await cmd.GetReaderAsync(select))
-{
-    while (await reader.ReadAsync())
-    {
-        string path = reader.GetString(0);
-        ...
-</pre>
-
-        Here is code for removing files from the search index in one batch of primary keys, the file paths.
-        We have to convert from strings to objects, as primary keys can either be string or double,
-        you specify that when you do your first insert into the database, using the Define class, as below:
-<pre class="prettyprint lang-cs">
-var keysToDelete = filePathsToDeleteFromDb.Select(path => (object)path).ToList();
-using (var cmd = msctxt.getcmd())
-    await cmd.DeleteAsync(new Delete() { table = "files", values = keysToDelete });
-</pre>
-
-        Here is code for adding files to the search index, using the Define class
-<pre class="prettyprint lang-cs">
-Define define = new Define() { table = "files" };
-foreach (string filePath in filePaths)
-{
-    string prunedPath = filePath.Substring(UserRoot.Length);
-    string searchData = string.Join(" ", Utils.BreakPathIntoWords(prunedPath));
-
-    long lastModified = info.filesLastModifiedInFs[filePath];
-
-    // Unnecessary - Primary key is the path, just use "value" where you'd use "path"
-    //define.SetData(filePath, "path", filePath);
-    define.SetData(filePath, "filelastmodified", lastModified);
-    define.SetData(filePath, "searchdata", searchData);
-}
-await cmd.DefineAsync(define);
-</pre>
-
-        Finally, here is the code for breaking up a relative path into search terms.
-        Anything containing letters or digits is fair game:
-<pre class="prettyprint lang-cs">
-public static List<string> BreakPathIntoWords(string path)
-{
-    List<string> retVal = new List<string>();
-    string[] parts = 
-        path.Split(new[] { Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-
-    string curWord = "";
-    foreach (string part in parts)
-    {
-        foreach (char c in part)
-        {
-            if (char.IsLetterOrDigit(c))
-            {
-                curWord += c;
-            }
-            else
-            { 
-                if (curWord != "")
-                    retVal.Add(curWord);
-                curWord = "";
-            }
-        }
-
-        if (curWord != "")
-            retVal.Add(curWord);
-        curWord = "";
-    }
-
-    if (curWord != "")
-        retVal.Add(curWord);
-    return retVal;
-}
-
-</pre>
-
-Enjoy!
-<a href="mailto: contact@metastrings.io">contact@metastrings.io</a>
 </div>
-
 </body>
 </html>

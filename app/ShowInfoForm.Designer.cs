@@ -43,7 +43,7 @@
             this.InfoTextBox.Name = "InfoTextBox";
             this.InfoTextBox.ReadOnly = true;
             this.InfoTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.InfoTextBox.Size = new System.Drawing.Size(1041, 738);
+            this.InfoTextBox.Size = new System.Drawing.Size(709, 602);
             this.InfoTextBox.TabIndex = 0;
             this.InfoTextBox.WordWrap = false;
             // 
@@ -51,7 +51,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1069, 769);
+            this.ClientSize = new System.Drawing.Size(735, 628);
             this.Controls.Add(this.InfoTextBox);
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Name = "ShowInfoForm";

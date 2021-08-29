@@ -27,10 +27,10 @@ namespace fql
         public DirectoryUpdate updater;
 
         // Path => file timestamp, search data
-        public List<Tuple<string, long, string>> toAdd = new List<Tuple<string, long, string>>();
+        public List<Tuple<string, long, string>> toAdd;
 
         // Paths to delete, as objects for direct metastrings delete
-        public List<object> toDelete = new List<object>();
+        public List<object> toDelete;
 
         public int filesAdded;
         public int filesRemoved;
@@ -204,9 +204,9 @@ namespace fql
                         allFilePaths.AddRange(Directory.GetFiles(curDirPath, "*", SearchOption.TopDirectoryOnly));
                     allFilePaths = allFilePaths.Distinct().ToList();
                 }
-                ProcessDirectory(allFilePaths, dirProcInfo);
+                ProcessFiles(allFilePaths, dirProcInfo);
 
-                using (var ctxt = msctxt.GetContext())
+                using (var ctxt = msctxt.GetContext()) // create the metastrings Context
                 {
                     update.Start("Cleaning search index...", dirProcInfo.toDelete.Count);
                     updater?.Invoke(update);
@@ -214,11 +214,13 @@ namespace fql
 
                     update.Start("Updating search index...", dirProcInfo.toAdd.Count);
                     updater?.Invoke(update);
+                    Define define = new Define("files", null); // reuse this object, pull allocs out of loops
                     foreach (var tuple in dirProcInfo.toAdd)
                     {
-                        Define define = new Define("files", tuple.Item1);
+                        define.key = tuple.Item1;
                         define.metadata["filelastmodified"] = tuple.Item2;
                         define.metadata["searchdata"] = tuple.Item3;
+
                         await ctxt.Cmd.DefineAsync(define);
 
                         ++update.current;
@@ -249,13 +251,12 @@ namespace fql
             }
         }
 
-        private static void ProcessDirectory(IEnumerable<string> allFilePaths, DirProcessInfo info)
+        private static void ProcessFiles(IEnumerable<string> filePaths, DirProcessInfo info)
         {
-
             List<string> filesToAdd = new List<string>();
-            List<string> filesToRemove = new List<string>();
+            List<object> filesToRemove = new List<object>(); // object for direct metastrings use
 
-            foreach (string filePath in allFilePaths)
+            foreach (string filePath in filePaths)
             {
                 bool inDb = info.filesLastModifiedInDb.ContainsKey(filePath);
                 bool inFs = info.filesLastModifiedInFs.ContainsKey(filePath);
@@ -290,9 +291,9 @@ namespace fql
                     continue;
                 }
             }
+            info.toDelete = filesToRemove;
 
-            info.toDelete.AddRange(filesToRemove.Select(f => (object)f));
-
+            info.toAdd = new List<Tuple<string, long, string>>(filesToAdd.Count);
             foreach (string filePath in filesToAdd)
             {
                 string searchData =
@@ -304,7 +305,10 @@ namespace fql
                 searchData = searchData.Trim();
 
                 long lastModified = info.filesLastModifiedInFs[filePath];
-                info.toAdd.Add(new Tuple<string, long, string>(filePath, lastModified, searchData));
+                info.toAdd.Add
+                (
+                    new Tuple<string, long, string>(filePath, lastModified, searchData)
+                );
             }
         }
 

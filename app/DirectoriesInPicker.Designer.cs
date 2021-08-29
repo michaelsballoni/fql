@@ -72,7 +72,7 @@
             this.groupBox1.Size = new System.Drawing.Size(348, 440);
             this.groupBox1.TabIndex = 2;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Your Media Folders To Choose";
+            this.groupBox1.Text = "Your Media Folders";
             // 
             // groupBox2
             // 
@@ -85,7 +85,7 @@
             this.groupBox2.Size = new System.Drawing.Size(336, 388);
             this.groupBox2.TabIndex = 3;
             this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "The Media Folders To Search In";
+            this.groupBox2.Text = "Media Folders To Search In";
             // 
             // RemoveIncludeFolderButton
             // 

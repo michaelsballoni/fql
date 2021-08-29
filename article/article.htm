@@ -1,0 +1,426 @@
+﻿<!DOCTYPE HTML>
+<!--------------------------------------------------------------------------->  
+<!--                           INTRODUCTION                                
+
+ The CodeProject article submission template (HTML version)
+
+Using this template will help us post your article sooner. To use, just 
+follow the 3 easy steps below:
+ 
+     1. Fill in the article description details
+     2. Add links to your images and downloads
+     3. Include the main article text
+
+That's all there is to it! All formatting will be done by our submission
+scripts and style sheets. 
+
+-->  
+<!--------------------------------------------------------------------------->  
+<!--                        IGNORE THIS SECTION                            -->
+<html>
+<head>
+<title>CodeProject</title>
+<Style>
+BODY, P, TD { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10pt }
+BODY {padding:15px; }
+H2,H3,H4,H5 { color: #ff9900; font-weight: bold; }
+H2 { font-size: 13pt; }
+H3 { font-size: 12pt; }
+H4 { font-size: 10pt; color: black; }
+PRE { BACKGROUND-COLOR: #FBEDBB; FONT-FAMILY: "Courier New", Courier, mono; WHITE-SPACE: pre; }
+CODE { COLOR: #990000; FONT-FAMILY: "Courier New", Courier, mono; }
+</style>
+<link type="text/css" rel="stylesheet" 
+      href="https://codeproject.global.ssl.fastly.net/App_Themes/CodeProject/Css/Main.min.css">
+</head>
+<body bgcolor="#FFFFFF" color=#000000>
+    <!--------------------------------------------------------------------------->
+    <!-------------------------------     STEP 1      --------------------------->
+    <!--  Fill in the details (CodeProject will reformat this section for you) -->
+
+<pre>
+Title:       My Media Search: Find and enjoy the media files on your PC
+Description: Looking for that great Killers track about being in a Rut? just enter "Killers Rut" and it'll come right up
+Abstract:    You will see set operations and full-text indexing at work in a fun little Windows app.
+
+Author:      Michael Sydney Balloni
+Email:       balloni.michael@yahoo.com
+
+Language:    C#
+Platform:    Windows
+Technology:  .NET, metastrings
+Topic:       File Search Engine
+
+Section      Not sure
+SubSection   Not sure
+
+License:     Apache 2.0
+</pre>
+
+    <!-------------------------------     STEP 2      --------------------------->
+    <!--  Include download and sample image information.                       -->
+
+    <ul class=download>
+        <li><a href="code.zip">Download source - 251 Kb</a></li>
+    </ul>
+
+    <!-------------------------------     STEP 3      --------------------------->
+    <!--  Add the article text. Please use simple formatting (<h2>, <p> etc)   -->
+
+    <h2>Introduction</h2>
+
+    <p>
+        My Media Search is a fun little Windows app for finding an enjoying your media files.
+    </p>
+    <p>
+        You tell it what directories to index, like Pictures, Music, and Videos...
+        <br clear=all>
+        <br clear=all>
+        <img src="pickin.png">
+        <br clear=all>
+        <br clear=all>
+        ...and it indexes the files in those folders to support fast searches...
+        <br clear=all>
+        <br clear=all>
+        <img src="indexing.png">
+        <br clear=all>
+        <br clear=all>
+        ...then you can search for silliness...
+        <br clear=all>
+        <br clear=all>
+        <img src="search.png">
+        <br clear=all>
+        <br clear=all>
+    </p>
+    <p>
+        Once you get a list of search results you can open the files, open containing folders,
+        and get all the detailed metadata the Windows maintains for each file:
+        <br clear=all>
+        <br clear=all>
+        <img src="properties.png">
+        <br clear=all>
+        <br clear=all>
+    </p>
+
+    <h2>My Media Search Explained</h2>
+    <p>
+        My Media Search is a Windows Forms application, using .NET Framework 4.7.2.
+        I wanted to use .NET 5.0, but the code for getting file properties and thumbnails
+        was only available out-of-the-box from Windows APIs, namely the
+        Microsoft.WindowsAPICodePack libraries.
+    </p>
+    <p>
+        You had to see this coming...My Media Search is powered by the
+        <a href="https://metastrings.io" target=_blank>metastrings</a> database!
+        I retooled metastrings for this application, and for its general coherence as software:
+        <ul>
+            <li>
+                Dropped support for MySQL.
+                I no longer have MySQL installed.
+                Using metastrings only makes sense where performance and scalability are not issues.
+                This positions it to be useful for adding lightweight database support to applications,
+                not to be part of a client-server database solution.
+            </li>
+            <li>
+                With MySQL out of the way, I was able to lift the length limit on strings,
+                as SQLite has no such limitation.
+                This means you won't have to use the "long strings" API,
+                which I was tempted to remove, but
+                <a href="https://mscript.info" target=_blank>mscript</a> uses it, so it lives on.
+                For now.
+            </li>
+            <li>
+                Cementing the coherent role as a small, easy to use database,
+                I added full-text indexing for all string values.
+                Not long strings, just the Define'd / SELECT stuff.
+                With full-text in place, metastrings was poised to implement My Media Search.
+            </li>
+        </ul>
+    </p>
+
+    <h2>Code Overview</h2>
+    <p>
+        The lib project has the SearchInfo class that implements most all non-UI functionality.
+    </p>
+    <p>
+        The cmd project is a proof-of-concept for SearchInfo.
+        You can use it to index an arbitrary directory, update the index, and perform searches.
+        Note that it indexes the one directory you give it, erasing indexing for any other directories.
+        Just a proof of concept.
+    </p>
+<pre>
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.IO;
+
+namespace fql
+{
+    class Program
+    {
+        [STAThread]
+        static async Task&lt;int&gt; Main(string[] args)
+        {
+            if (args.Length &lt; 1)
+            {
+                Console.WriteLine("Usage: &lt;directory path&gt;");
+                return 0;
+            }
+
+            string dirPath = args[0].Trim();
+            if (!Directory.Exists(dirPath))
+            {
+                Console.WriteLine("ERROR: Directory does not exist: {0}", dirPath);
+                return 1;
+            }
+
+#if !DEBUG
+            try
+#endif
+            {
+                while (true)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Commands: reset, update, search, quit");
+
+                    Console.WriteLine();
+                    Console.Write("&gt; ");
+
+                    string line = Console.ReadLine().Trim();
+                    if (string.IsNullOrEmpty(line))
+                        continue;
+
+                    Console.WriteLine();
+
+                    if (line == "reset")
+                    {
+                        SearchInfo.Reset();
+                        Console.WriteLine("DB reset");
+                    }
+                    else if (line == "update")
+                    {
+                        var updateResult = 
+                            await SearchInfo.UpdateAsync
+                            (
+                                new List&lt;string&gt; { dirPath }, 
+                                new List&lt;string&gt;(), 
+                                OnDirectoryUpdate
+                            );
+                        Console.WriteLine("DB updated: files added: {0} - removed: {1} - modified: {2} - indexed: {3}", 
+                                          updateResult.filesAdded, 
+                                          updateResult.filesRemoved, 
+                                          updateResult.filesModified,
+                                          updateResult.indexSize);
+                    }
+                    else if (line.StartsWith("search "))
+                    {
+                        var results = await SearchInfo.SearchAsync(line.Substring("search ".Length).Trim());
+                        Console.WriteLine($"Search results: {results.Count}");
+                        foreach (var result in results)
+                            Console.WriteLine(result);
+                    }
+                    else if (line == "quit")
+                    {
+                        Console.WriteLine("Quitting...");
+                        break;
+                    }
+                }
+            }
+#if !DEBUG
+            catch (Exception exp)
+            {
+                Console.WriteLine("EXCEPTION: {0}", exp);
+                return 1;
+            }
+#endif
+            Console.WriteLine("All done.");
+            return 0;
+        }
+
+        static void OnDirectoryUpdate(UpdateInfo update)
+        {
+            Console.WriteLine(update.ToString());
+        }
+    }
+}
+</pre>
+    <p>
+        The app project is the top-level Windows Forms application, 
+        nothing too interesting there, usual Windows Forms stuff.
+    </p>
+
+    <h3>The SearchInfo Class</h3>
+    <h4>Get All Windows Metadata For a File</h4>
+<pre>
+public static Dictionary&lt;string, string&gt; GetFileMetadata(string filePath)
+{
+    Dictionary&lt;string, string&gt; metadata = new Dictionary&lt;string, string&gt;();
+
+    Shell32.Shell shell = new Shell32.Shell();
+    Shell32.Folder objFolder = shell.NameSpace(Path.GetDirectoryName(filePath));
+
+    List&lt;string&gt; headers = new List&lt;string&gt;();
+    for (int i = 0; i &lt; short.MaxValue; ++i)
+    {
+        string header = objFolder.GetDetailsOf(null, i);
+        if (string.IsNullOrEmpty(header))
+            break;
+
+        headers.Add(header);
+    }
+    if (headers.Count == 0)
+        return metadata;
+
+    foreach (Shell32.FolderItem2 item in objFolder.Items())
+    {
+        if (!filePath.Equals(item.Path, StringComparison.OrdinalIgnoreCase))
+            continue;
+
+        for (int i = 0; i &lt; headers.Count; ++i)
+        {
+            string details = objFolder.GetDetailsOf(item, i);
+            if (!string.IsNullOrWhiteSpace(details))
+                metadata.Add(headers[i], details);
+        }
+    }
+
+    return metadata;
+} // GetFileMetadata()
+</pre>
+    <p>
+        That code is one of the requirements for using .NET Framework and not .NET 5+.
+        Without this function and without the tiles view of search results,
+        .NET 5+ would probably work.
+    </p>
+
+    <h4>The Search Index Algorithm</h4>
+    <ol>
+        <li>Gather all file system file paths and last modified dates from the chosen directories</li>
+        <li>Remove all file system file paths in the exclusion directories</li>
+        <li>Gather all database file paths and last modified dates</li>
+        <li>
+            ProcessFiles:
+            March all file system file paths against the database file paths,
+            determining which to add or remove from the index
+        </li>
+        <li>Do all database operations to align what's in the index with what's in the file system</li>
+    </ol>
+
+    <p>
+        Here's the implementation of the central ProcessFiles function:
+    </p>
+    <pre>
+private static void ProcessFiles(IEnumerable&lt;string&gt; filePaths, DirProcessInfo info)
+{
+    List&lt;string&gt; filesToAdd = new List&lt;string&gt;();
+    List&lt;object&gt; filesToRemove = new List&lt;object&gt;(); // object for direct metastrings use
+
+    foreach (string filePath in filePaths)
+    {
+        bool inDb = info.filesLastModifiedInDb.ContainsKey(filePath);
+        bool inFs = info.filesLastModifiedInFs.ContainsKey(filePath);
+
+        if (inDb && !inFs)
+        {
+            ++info.filesRemoved;
+            filesToRemove.Add(filePath);
+            continue;
+        }
+
+        if (inFs && !inDb)
+        {
+            ++info.filesAdded;
+            filesToAdd.Add(filePath);
+            continue;
+        }
+
+        if (!inDb && !inFs) // weird!
+        {
+            ++info.filesRemoved;
+            filesToRemove.Add(filePath);
+            continue;
+        }
+
+        // else in both
+
+        if (info.filesLastModifiedInDb[filePath] &lt; info.filesLastModifiedInFs[filePath])
+        {
+            ++info.filesModified;
+            filesToAdd.Add(filePath);
+            continue;
+        }
+    }
+    info.toDelete = filesToRemove;
+
+    info.toAdd = new List&lt;Tuple&lt;string, long, string&gt;&gt;(filesToAdd.Count);
+    foreach (string filePath in filesToAdd)
+    {
+        string searchData =
+            filePath.Substring(UserRoot.Length)
+                .Replace(Path.DirectorySeparatorChar, ' ')
+                .Replace('.', ' ');
+        while (searchData.Contains("  "))
+            searchData = searchData.Replace("  ", " ");
+        searchData = searchData.Trim();
+
+        long lastModified = info.filesLastModifiedInFs[filePath];
+        info.toAdd.Add
+        (
+            new Tuple&lt;string, long, string&gt;(filePath, lastModified, searchData)
+        );
+    }
+}
+</pre>
+    <p>
+        The code for computing the searchData string for full-text indexing
+        split ups the path component, strips out file extensions from filenames,
+        eliminates double spaces, and trims the result.
+    </p>
+
+    <p>
+        Once ProcessFiles figures out what needs to be done,
+        this code interacts with metastrings to do the deed:
+    </p>
+    <pre>
+using (var ctxt = msctxt.GetContext()) // create the metastrings Context
+{
+    update.Start("Cleaning search index...", dirProcInfo.toDelete.Count);
+    updater?.Invoke(update);
+    await ctxt.Cmd.DeleteAsync("files", dirProcInfo.toDelete);
+
+    update.Start("Updating search index...", dirProcInfo.toAdd.Count);
+    updater?.Invoke(update);
+    Define define = new Define("files", null); // reuse this object, pull allocs out of loops
+    foreach (var tuple in dirProcInfo.toAdd)
+    {
+        define.key = tuple.Item1;
+        define.metadata["filelastmodified"] = tuple.Item2;
+        define.metadata["searchdata"] = tuple.Item3;
+
+        await ctxt.Cmd.DefineAsync(define);
+
+        ++update.current;
+        if ((update.current % 100) == 0)
+            updater?.Invoke(update);
+    }
+}
+</pre>
+
+<h2>Conclusion and Points of Interest</h2>
+<p>
+    So build the app and enjoy playing with it.  
+    I think you will find it useful for looking through thousands of pictures and songs.
+</p>
+<p>
+    Implementing the low level algorithm of this app was made easy by metastrings.
+</p>
+<p>
+    I hope you now have confidence adding full-text searching to your applications.
+</p>
+<p>
+    Enjoy!
+</p>
+
+</body>
+</html>
+
