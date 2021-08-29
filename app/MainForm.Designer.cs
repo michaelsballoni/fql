@@ -58,8 +58,8 @@
             this.searchIndexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.chooseSearchFoldersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.updateIndexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetIndexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateIndexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cancelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMyMediaSearchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -116,7 +116,7 @@
             this.SearchBox.Name = "SearchBox";
             this.SearchBox.Size = new System.Drawing.Size(829, 32);
             this.SearchBox.TabIndex = 9;
-            this.SearchBox.Text = "Enter search terms here, then hit [Enter] or press the Search button";
+            this.SearchBox.Text = "Type your search here, then hit the [Enter] key to find your files";
             this.SearchBox.Click += new System.EventHandler(this.SearchBox_Click);
             this.SearchBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.SearchBox_KeyPress);
             // 
@@ -192,6 +192,7 @@
             // menuStrip1
             // 
             this.menuStrip1.Font = new System.Drawing.Font("Verdana", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.menuStrip1.GripMargin = new System.Windows.Forms.Padding(2, 2, 0, 2);
             this.menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
@@ -308,19 +309,19 @@
             this.toolStripSeparator2.Name = "toolStripSeparator2";
             this.toolStripSeparator2.Size = new System.Drawing.Size(352, 6);
             // 
-            // updateIndexToolStripMenuItem
-            // 
-            this.updateIndexToolStripMenuItem.Name = "updateIndexToolStripMenuItem";
-            this.updateIndexToolStripMenuItem.Size = new System.Drawing.Size(355, 34);
-            this.updateIndexToolStripMenuItem.Text = "&Update Index";
-            this.updateIndexToolStripMenuItem.Click += new System.EventHandler(this.updateIndexToolStripMenuItem_Click);
-            // 
             // resetIndexToolStripMenuItem
             // 
             this.resetIndexToolStripMenuItem.Name = "resetIndexToolStripMenuItem";
             this.resetIndexToolStripMenuItem.Size = new System.Drawing.Size(355, 34);
             this.resetIndexToolStripMenuItem.Text = "&Reset Index";
             this.resetIndexToolStripMenuItem.Click += new System.EventHandler(this.resetIndexToolStripMenuItem_Click);
+            // 
+            // updateIndexToolStripMenuItem
+            // 
+            this.updateIndexToolStripMenuItem.Name = "updateIndexToolStripMenuItem";
+            this.updateIndexToolStripMenuItem.Size = new System.Drawing.Size(355, 34);
+            this.updateIndexToolStripMenuItem.Text = "&Update Index";
+            this.updateIndexToolStripMenuItem.Click += new System.EventHandler(this.updateIndexToolStripMenuItem_Click);
             // 
             // cancelToolStripMenuItem
             // 

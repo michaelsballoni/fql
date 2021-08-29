@@ -18,16 +18,12 @@ namespace fql
     {
         public SettingsFile()
         {
-            string appDirPath =
+            m_settingsFilePath =
                 Path.Combine
                 (
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "mymediasearch"
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                    "fql.settings.json"
                 );
-            Directory.CreateDirectory(appDirPath);
-
-            m_settingsFilePath = Path.Combine(appDirPath, "settings.json");
-
             LoadSettings();
         }
 

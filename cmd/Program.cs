@@ -79,7 +79,7 @@ namespace fql
             catch (Exception exp)
             {
                 Console.WriteLine("EXCEPTION: {0}", exp);
-                return;
+                return 1;
             }
 #endif
             Console.WriteLine("All done.");
